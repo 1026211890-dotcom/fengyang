@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>8楼私人接待中心</title>
+  <style>
+    /* ════════════════════ 全局基础 ════════════════════ */
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    :root {
+      --c-primary: #2e7d32;
+      --c-primary-light: #43a047;
+      --c-primary-bg: #e8f5e9;
+      --c-gold: #b8860b;
+      --c-gold-bg: #fff8e1;
+      --c-red: #c62828;
+      --c-red-bg: #ffebee;
+      --c-yellow: #f57f17;
+      --c-yellow-bg: #fff9c4;
+      --c-green: #2e7d32;
+      --c-green-bg: #e8f5e9;
+      --c-text: #212121;
+      --c-text2: #555;
+      --c-border: #e0e0e0;
+      --c-bg: #f5f5f5;
+      --c-card: #fff;
+      --radius: 12px;
+      --shadow: 0 2px 12px rgba(0,0,0,0.08);
+      --header-h: 56px;
+      --nav-h: 60px;
+    }
+    html, body { height: 100%; font-family: -apple-system, 'PingFang SC', 'Helvetica Neue', sans-serif; background: var(--c-bg); color: var(--c-text); font-size: 15px; }
+
+    /* ════════════════════ 布局 ════════════════════ */
+    #app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+    .header { height: var(--header-h); background: var(--c-primary); color: #fff; display: flex; align-items: center; padding: 0 16px; position: relative; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+    .header-back { font-size: 22px; margin-right: 8px; cursor: pointer; display: none; }
+    .header-title { font-size: 17px; font-weight: 600; flex: 1; }
+    .header-subtitle { font-size: 12px; opacity: 0.75; }
+    .main-content { flex: 1; overflow-y: auto; padding-bottom: var(--nav-h); -webkit-overflow-scrolling: touch; }
+    .bottom-nav { height: var(--nav-h); background: #fff; border-top: 1px solid var(--c-border); display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; box-shadow: 0 -2px 8px rgba(0,0,0,0.06); }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; gap: 3px; color: #999; font-size: 11px; transition: color .2s; }
+    .nav-item.active { color: var(--c-primary); }
+    .nav-icon { font-size: 22px; }
+
+    /* ════════════════════ 通用组件 ════════════════════ */
+    .page { display: none; padding: 16px; }
+    .page.active { display: block; }
+    .card { background: var(--c-card); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow); }
+    .card-title { font-size: 15px; font-weight: 600; color: var(--c-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+    .section-title { font-size: 13px; font-weight: 600; color: var(--c-text2); text-transform: uppercase; letter-spacing: .5px; margin: 20px 0 8px; padding-left: 4px; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; border: none; cursor: pointer; transition: all .2s; }
+    .btn-primary { background: var(--c-primary); color: #fff; }
+    .btn-primary:active { background: var(--c-primary-light); }
+    .btn-outline { background: transparent; color: var(--c-primary); border: 1.5px solid var(--c-primary); }
+    .btn-danger { background: var(--c-red); color: #fff; }
+    .btn-sm { padding: 6px 14px; font-size: 13px; }
+    .btn-block { width: 100%; }
+    .form-group { margin-bottom: 14px; }
+    .form-label { font-size: 13px; color: var(--c-text2); margin-bottom: 5px; display: block; }
+    .form-control { width: 100%; padding: 10px 12px; border: 1.5px solid var(--c-border); border-radius: 8px; font-size: 14px; background: #fff; color: var(--c-text); outline: none; transition: border-color .2s; }
+    .form-control:focus { border-color: var(--c-primary); }
+    select.form-control { appearance: none; background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23999'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 30px; }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+    .tag-pending { background: #fff3e0; color: #e65100; }
+    .tag-approved { background: var(--c-primary-bg); color: var(--c-primary); }
+    .tag-rejected { background: var(--c-red-bg); color: var(--c-red); }
+    .divider { height: 1px; background: var(--c-border); margin: 12px 0; }
+    .empty-tip { text-align: center; padding: 40px 20px; color: #bbb; font-size: 14px; }
+    .toast { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.75); color: #fff; padding: 8px 18px; border-radius: 20px; font-size: 13px; z-index: 9999; pointer-events: none; opacity: 0; transition: opacity .3s; white-space: nowrap; }
+    .toast.show { opacity: 1; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal-box { background: #fff; border-radius: 16px 16px 0 0; width: 100%; max-height: 85vh; overflow-y: auto; padding: 20px 16px 32px; animation: slideUp .25s ease; }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .modal-title { font-size: 16px; font-weight: 600; }
+    .modal-close { font-size: 20px; color: #999; cursor: pointer; }
+    .row { display: flex; gap: 10px; }
+    .col { flex: 1; }
+    .progress-bar { height: 6px; background: #eee; border-radius: 3px; overflow: hidden; margin-top: 6px; }
+    .progress-fill { height: 100%; border-radius: 3px; transition: width .3s; }
+
+    /* ════════════════════ 首页 ════════════════════ */
+    .home-banner { background: linear-gradient(135deg, var(--c-primary) 0%, #1b5e20 100%); color: #fff; border-radius: var(--radius); padding: 20px 16px; margin-bottom: 16px; position: relative; overflow: hidden; }
+    .home-banner::after { content: '🍃'; position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-size: 52px; opacity: 0.25; }
+    .home-banner h2 { font-size: 20px; font-weight: 700; }
+    .home-banner p { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+    .home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .home-card { background: var(--c-card); border-radius: var(--radius); padding: 16px 12px; text-align: center; cursor: pointer; box-shadow: var(--shadow); transition: transform .15s; }
+    .home-card:active { transform: scale(0.96); }
+    .home-card .icon { font-size: 32px; margin-bottom: 8px; }
+    .home-card .label { font-size: 13px; font-weight: 600; color: var(--c-text); }
+    .home-card .desc { font-size: 11px; color: var(--c-text2); margin-top: 3px; }
+
+    /* ════════════════════ 营养知识 ════════════════════ */
+    .disease-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 14px; scrollbar-width: none; }
+    .disease-tabs::-webkit-scrollbar { display: none; }
+    .disease-tab { flex-shrink: 0; padding: 6px 14px; border-radius: 20px; font-size: 13px; cursor: pointer; background: #fff; border: 1.5px solid var(--c-border); color: var(--c-text2); transition: all .2s; }
+    .disease-tab.active { background: var(--c-primary); border-color: var(--c-primary); color: #fff; }
+    .nutrition-card { background: var(--c-card); border-radius: var(--radius); margin-bottom: 12px; overflow: hidden; box-shadow: var(--shadow); }
+    .nutrition-card-header { padding: 14px 16px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+    .nutrition-card-title { font-size: 15px; font-weight: 600; }
+    .nutrition-card-body { padding: 0 16px; max-height: 0; overflow: hidden; transition: max-height .35s ease, padding .3s; }
+    .nutrition-card-body.open { max-height: 2000px; padding: 0 16px 16px; }
+    .nutrition-item { margin-bottom: 10px; }
+    .nutrition-item h4 { font-size: 13px; font-weight: 600; color: var(--c-primary); margin-bottom: 4px; }
+    .nutrition-item p { font-size: 13px; color: var(--c-text2); line-height: 1.6; }
+    .nutrition-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; margin: 2px; }
+
+    /* ════════════════════ 食物红黄绿灯 ════════════════════ */
+    .light-tabs { display: flex; gap: 0; margin-bottom: 14px; border-radius: 8px; overflow: hidden; border: 1.5px solid var(--c-border); }
+    .light-tab { flex: 1; padding: 8px 4px; text-align: center; font-size: 13px; font-weight: 500; cursor: pointer; background: #fff; color: var(--c-text2); transition: all .2s; }
+    .light-tab.red.active { background: var(--c-red); color: #fff; }
+    .light-tab.yellow.active { background: var(--c-yellow); color: #fff; }
+    .light-tab.green.active { background: var(--c-green); color: #fff; }
+    .cat-filter { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px; scrollbar-width: none; }
+    .cat-filter::-webkit-scrollbar { display: none; }
+    .cat-btn { flex-shrink: 0; padding: 5px 12px; border-radius: 16px; font-size: 12px; cursor: pointer; background: #fff; border: 1.5px solid var(--c-border); color: var(--c-text2); transition: all .2s; }
+    .cat-btn.active { background: var(--c-primary); border-color: var(--c-primary); color: #fff; }
+    .food-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .food-item { background: var(--c-card); border-radius: 8px; padding: 10px 8px; text-align: center; font-size: 13px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+    .food-item .food-emoji { font-size: 24px; margin-bottom: 4px; }
+    .food-item .food-name { font-size: 12px; color: var(--c-text); font-weight: 500; }
+    .food-item .food-reason { font-size: 11px; color: var(--c-text2); margin-top: 2px; line-height: 1.4; }
+    .food-item.red-food { border-top: 3px solid var(--c-red); }
+    .food-item.yellow-food { border-top: 3px solid var(--c-yellow); }
+    .food-item.green-food { border-top: 3px solid var(--c-green); }
+
+    /* ════════════════════ 申报审批 ════════════════════ */
+    .approval-item { background: var(--c-card); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; box-shadow: var(--shadow); }
+    .approval-item-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .approval-no { font-size: 12px; color: var(--c-text2); }
+    .approval-meta { font-size: 13px; color: var(--c-text2); line-height: 1.7; }
+    .approval-actions { display: flex; gap: 8px; margin-top: 10px; }
+
+    /* ════════════════════ 预约 ════════════════════ */
+    .reserve-type-row { display: flex; gap: 8px; margin-bottom: 14px; }
+    .reserve-type-btn { flex: 1; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 500; text-align: center; cursor: pointer; border: 2px solid var(--c-border); background: #fff; color: var(--c-text2); transition: all .2s; }
+    .reserve-type-btn.active { border-color: var(--c-primary); background: var(--c-primary-bg); color: var(--c-primary); }
+    .reservation-item { background: var(--c-card); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; box-shadow: var(--shadow); }
+
+    /* ════════════════════ 检查打勾 ════════════════════ */
+    .check-category-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .check-cat-card { background: var(--c-card); border-radius: var(--radius); padding: 14px 12px; text-align: center; cursor: pointer; box-shadow: var(--shadow); transition: all .15s; }
+    .check-cat-card:active { transform: scale(0.96); }
+    .check-cat-card .icon { font-size: 28px; margin-bottom: 6px; }
+    .check-cat-card .label { font-size: 13px; font-weight: 600; }
+    .check-cat-card .progress-text { font-size: 11px; color: var(--c-text2); margin-top: 3px; }
+    .check-list { }
+    .check-item { display: flex; align-items: flex-start; gap: 12px; padding: 13px 0; border-bottom: 1px solid #f0f0f0; }
+    .check-item:last-child { border-bottom: none; }
+    .check-box { width: 22px; height: 22px; border-radius: 6px; border: 2px solid var(--c-border); flex-shrink: 0; cursor: pointer; transition: all .2s; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+    .check-box.checked { background: var(--c-primary); border-color: var(--c-primary); }
+    .check-box.checked::after { content: '✓'; color: #fff; font-size: 13px; font-weight: 700; }
+    .check-item-text { flex: 1; font-size: 14px; line-height: 1.5; }
+    .check-item-text.done { color: #bbb; text-decoration: line-through; }
+
+    /* ════════════════════ 厨房安全 ════════════════════ */
+    .kitchen-check-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+    .kitchen-check-item:last-child { border-bottom: none; }
+    .kitchen-switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+    .kitchen-switch input { opacity: 0; width: 0; height: 0; }
+    .kitchen-switch-slider { position: absolute; inset: 0; background: #ccc; border-radius: 12px; cursor: pointer; transition: .2s; }
+    .kitchen-switch-slider::before { content: ''; position: absolute; width: 18px; height: 18px; border-radius: 50%; background: #fff; top: 3px; left: 3px; transition: .2s; }
+    .kitchen-switch input:checked + .kitchen-switch-slider { background: var(--c-primary); }
+    .kitchen-switch input:checked + .kitchen-switch-slider::before { transform: translateX(20px); }
+    .kitchen-label { flex: 1; font-size: 14px; }
+
+    /* ════════════════════ 响应式 ════════════════════ */
+    @media (min-width: 480px) {
+      #app { max-width: 480px; margin: 0 auto; box-shadow: 0 0 30px rgba(0,0,0,0.12); }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <!-- 顶部导航 -->
+  <div class="header" id="mainHeader">
+    <span class="header-back" id="headerBack" onclick="goBack()">‹</span>
+    <div>
+      <div class="header-title" id="headerTitle">8楼私人接待中心</div>
+      <div class="header-subtitle" id="headerSubtitle">管理系统</div>
+    </div>
+  </div>
+
+  <!-- 主内容区域 -->
+  <div class="main-content" id="mainContent">
+
+    <!-- ══════════════ 首页 ══════════════ -->
+    <div class="page active" id="page-home">
+      <div style="padding: 16px;">
+        <div class="home-banner">
+          <h2>🌿 欢迎使用</h2>
+          <p>8楼私厨 · 于总专属健康管理平台</p>
+        </div>
+        <div class="home-grid">
+          <div class="home-card" onclick="showPage('nutrition')">
+            <div class="icon">🧬</div>
+            <div class="label">营养知识</div>
+            <div class="desc">疾病营养指南</div>
+          </div>
+          <div class="home-card" onclick="showPage('traffic-light')">
+            <div class="icon">🚦</div>
+            <div class="label">食物红黄绿灯</div>
+            <div class="desc">食物选择参考</div>
+          </div>
+          <div class="home-card" onclick="showPage('approval')">
+            <div class="icon">📋</div>
+            <div class="label">申报审批</div>
+            <div class="desc">接待信息确认</div>
+          </div>
+          <div class="home-card" onclick="showPage('reservation')">
+            <div class="icon">📅</div>
+            <div class="label">预约</div>
+            <div class="desc">就餐 / 接待预约</div>
+          </div>
+          <div class="home-card" onclick="showPage('checklist')">
+            <div class="icon">✅</div>
+            <div class="label">检查打勾</div>
+            <div class="desc">接待前后检查</div>
+          </div>
+          <div class="home-card" onclick="showPage('kitchen')">
+            <div class="icon">🍳</div>
+            <div class="label">厨房安全</div>
+            <div class="desc">冰箱食品安全</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ 营养知识 ══════════════ -->
+    <div class="page" id="page-nutrition">
+      <div class="disease-tabs" id="diseaseTabs"></div>
+      <div id="nutritionContent"></div>
+    </div>
+
+    <!-- ══════════════ 食物红黄绿灯 ══════════════ -->
+    <div class="page" id="page-traffic-light">
+      <div class="light-tabs">
+        <div class="light-tab red active" data-light="red" onclick="switchLight('red', this)">🔴 红灯禁食</div>
+        <div class="light-tab yellow" data-light="yellow" onclick="switchLight('yellow', this)">🟡 黄灯限量</div>
+        <div class="light-tab green" data-light="green" onclick="switchLight('green', this)">🟢 绿灯推荐</div>
+      </div>
+      <div class="cat-filter" id="catFilter"></div>
+      <div class="food-grid" id="foodGrid"></div>
+    </div>
+
+    <!-- ══════════════ 申报审批 ══════════════ -->
+    <div class="page" id="page-approval">
+      <div style="display:flex; gap:8px; margin-bottom:14px;">
+        <button class="btn btn-primary btn-sm" onclick="openApprovalForm()">＋ 新建申报</button>
+        <select class="form-control" style="flex:1;font-size:13px;" onchange="loadApprovals(this.value)">
+          <option value="">全部状态</option>
+          <option value="pending">待审批</option>
+          <option value="approved">已通过</option>
+          <option value="rejected">已驳回</option>
+        </select>
+      </div>
+      <div id="approvalList"><div class="empty-tip">加载中…</div></div>
+    </div>
+
+    <!-- ══════════════ 预约 ══════════════ -->
+    <div class="page" id="page-reservation">
+      <div class="reserve-type-row">
+        <div class="reserve-type-btn active" id="rtBtn-normal_lunch" onclick="switchReserveType('normal_lunch')">🍱 于总就餐预约</div>
+        <div class="reserve-type-btn" id="rtBtn-reception" onclick="switchReserveType('reception')">🤝 接待任务预约</div>
+      </div>
+      <button class="btn btn-primary btn-sm" style="margin-bottom:12px;" onclick="openReservationForm()">＋ 新建预约</button>
+      <div id="reservationList"><div class="empty-tip">加载中…</div></div>
+    </div>
+
+    <!-- ══════════════ 检查打勾 ══════════════ -->
+    <div class="page" id="page-checklist">
+      <div id="checklistHome">
+        <div class="check-category-grid">
+          <div class="check-cat-card" onclick="openCheckSession('pre_reception')">
+            <div class="icon">📋</div>
+            <div class="label">接待前检查</div>
+            <div class="progress-text" id="progress-pre_reception">点击开始</div>
+          </div>
+          <div class="check-cat-card" onclick="openCheckSession('post_reception')">
+            <div class="icon">🧹</div>
+            <div class="label">接待后检查</div>
+            <div class="progress-text" id="progress-post_reception">点击开始</div>
+          </div>
+          <div class="check-cat-card" onclick="openCheckSession('kitchen_safety')" style="grid-column: span 2;">
+            <div class="icon">🔍</div>
+            <div class="label">厨房安全检查</div>
+            <div class="progress-text" id="progress-kitchen_safety">点击开始</div>
+          </div>
+        </div>
+        <div class="section-title">历史记录</div>
+        <div id="checkSessionHistory"><div class="empty-tip">加载中…</div></div>
+      </div>
+      <div id="checklistDetail" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+          <div>
+            <div style="font-size:15px;font-weight:600;" id="checkDetailTitle">检查中</div>
+            <div style="font-size:12px;color:var(--c-text2);" id="checkDetailProgress"></div>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="closeCheckDetail()">返回</button>
+        </div>
+        <div class="card">
+          <div class="form-group">
+            <label class="form-label">检查人</label>
+            <input class="form-control" id="checkerName" placeholder="请输入姓名" value="">
+          </div>
+        </div>
+        <div class="card">
+          <div class="check-list" id="checkItemList"></div>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="submitCheckSession()" style="margin-bottom:20px;">完成检查</button>
+      </div>
+    </div>
+
+    <!-- ══════════════ 厨房安全 ══════════════ -->
+    <div class="page" id="page-kitchen">
+      <div class="card">
+        <div class="card-title">📅 今日厨房安全检查</div>
+        <div class="form-group">
+          <label class="form-label">检查日期</label>
+          <input type="date" class="form-control" id="kitchenDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">检查人</label>
+          <input class="form-control" id="kitchenChecker" placeholder="请填写姓名">
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">🌡️ 温度检查</div>
+        <div id="kitchenChecks">
+          <div class="kitchen-check-item">
+            <label class="kitchen-switch"><input type="checkbox" id="kc-fridge_temp_ok"><span class="kitchen-switch-slider"></span></label>
+            <div class="kitchen-label">冰箱温度正常（冷藏 ≤4°C）</div>
+          </div>
+          <div class="kitchen-check-item">
+            <label class="kitchen-switch"><input type="checkbox" id="kc-freezer_temp_ok"><span class="kitchen-switch-slider"></span></label>
+            <div class="kitchen-label">冷冻室温度正常（≤-18°C）</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">🗄️ 食材管理</div>
+        <div class="kitchen-check-item">
+          <label class="kitchen-switch"><input type="checkbox" id="kc-fifo_followed"><span class="kitchen-switch-slider"></span></label>
+          <div class="kitchen-label">先进先出原则执行（旧食材在前）</div>
+        </div>
+        <div class="kitchen-check-item">
+          <label class="kitchen-switch"><input type="checkbox" id="kc-raw_cooked_separated"><span class="kitchen-switch-slider"></span></label>
+          <div class="kitchen-label">生熟食材分区存放</div>
+        </div>
+        <div class="kitchen-check-item">
+          <label class="kitchen-switch"><input type="checkbox" id="kc-overnight_soaked_discarded"><span class="kitchen-switch-slider"></span></label>
+          <div class="kitchen-label">隔夜泡发木耳/银耳已丢弃</div>
+        </div>
+        <div class="kitchen-check-item">
+          <label class="kitchen-switch"><input type="checkbox" id="kc-expired_removed"><span class="kitchen-switch-slider"></span></label>
+          <div class="kitchen-label">过期/变质食材已清除</div>
+        </div>
+        <div class="form-group" style="margin-top:12px;">
+          <label class="form-label">冰箱现有食材（文字记录）</label>
+          <textarea class="form-control" id="kc-fridge_contents" rows="3" placeholder="如：西兰花x2、鸡胸肉500g、昨日剩余汤品…"></textarea>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">🧹 清洁消毒</div>
+        <div class="kitchen-check-item">
+          <label class="kitchen-switch"><input type="checkbox" id="kc-cutting_board_cleaned"><span class="kitchen-switch-slider"></span></label>
+          <div class="kitchen-label">砧板已清洁消毒（生熟分开）</div>
+        </div>
+        <div class="kitchen-check-item">
+          <label class="kitchen-switch"><input type="checkbox" id="kc-stove_cleaned"><span class="kitchen-switch-slider"></span></label>
+          <div class="kitchen-label">灶台已清洁</div>
+        </div>
+        <div class="kitchen-check-item">
+          <label class="kitchen-switch"><input type="checkbox" id="kc-floor_cleaned"><span class="kitchen-switch-slider"></span></label>
+          <div class="kitchen-label">厨房地面已清洁</div>
+        </div>
+        <div class="kitchen-check-item">
+          <label class="kitchen-switch"><input type="checkbox" id="kc-trash_removed"><span class="kitchen-switch-slider"></span></label>
+          <div class="kitchen-label">垃圾已清理</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="form-group">
+          <label class="form-label">备注</label>
+          <textarea class="form-control" id="kc-notes" rows="2" placeholder="如有异常情况请记录…"></textarea>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-block" style="margin: 0 0 20px;" onclick="submitKitchenCheck()">提交今日检查</button>
+
+      <div class="section-title">历史检查记录</div>
+      <div id="kitchenHistory"><div class="empty-tip">加载中…</div></div>
+    </div>
+
+  </div><!-- end main-content -->
+
+  <!-- 底部导航 -->
+  <div class="bottom-nav">
+    <div class="nav-item active" id="nav-home" onclick="switchTab('home')">
+      <span class="nav-icon">🏠</span><span>首页</span>
+    </div>
+    <div class="nav-item" id="nav-nutrition" onclick="switchTab('nutrition')">
+      <span class="nav-icon">🧬</span><span>营养</span>
+    </div>
+    <div class="nav-item" id="nav-approval" onclick="switchTab('approval')">
+      <span class="nav-icon">📋</span><span>申报</span>
+    </div>
+    <div class="nav-item" id="nav-reservation" onclick="switchTab('reservation')">
+      <span class="nav-icon">📅</span><span>预约</span>
+    </div>
+    <div class="nav-item" id="nav-checklist" onclick="switchTab('checklist')">
+      <span class="nav-icon">✅</span><span>检查</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ 申报表单弹窗 ══════════════ -->
+<div class="modal-overlay" id="approvalModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">新建接待申报</span>
+      <span class="modal-close" onclick="closeModal('approvalModal')">×</span>
+    </div>
+    <div class="form-group">
+      <label class="form-label">提交人 *</label>
+      <select class="form-control" id="af-submitter">
+        <option value="冯洋">冯洋</option>
+        <option value="王倩">王倩</option>
+        <option value="其他">其他</option>
+      </select>
+    </div>
+    <div class="row">
+      <div class="col form-group">
+        <label class="form-label">接待日期 *</label>
+        <input type="date" class="form-control" id="af-reception_date">
+      </div>
+      <div class="col form-group">
+        <label class="form-label">接待类型</label>
+        <select class="form-control" id="af-reception_type">
+          <option value="标准接待">标准接待</option>
+          <option value="应急接待">应急接待</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col form-group">
+        <label class="form-label">到访时间</label>
+        <input type="time" class="form-control" id="af-visit_time">
+      </div>
+      <div class="col form-group">
+        <label class="form-label">离开时间</label>
+        <input type="time" class="form-control" id="af-leave_time">
+      </div>
+    </div>
+    <div class="row">
+      <div class="col form-group">
+        <label class="form-label">来宾人数</label>
+        <input type="number" class="form-control" id="af-guest_count" placeholder="人数" min="1">
+      </div>
+      <div class="col form-group">
+        <label class="form-label">用餐类型</label>
+        <select class="form-control" id="af-meal_type">
+          <option value="">请选择</option>
+          <option value="午餐">午餐</option>
+          <option value="晚餐">晚餐</option>
+          <option value="午餐+晚餐">午餐+晚餐</option>
+          <option value="仅茶叙">仅茶叙</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">来宾单位/身份</label>
+      <input class="form-control" id="af-guest_info" placeholder="如：XX公司总经理一行">
+    </div>
+    <div class="form-group">
+      <label class="form-label">区域需求</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;" id="af-areas">
+        <label style="display:flex;align-items:center;gap:4px;font-size:13px;"><input type="checkbox" value="餐厅"> 餐厅</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:13px;"><input type="checkbox" value="掼蛋房"> 掼蛋房</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:13px;"><input type="checkbox" value="顶楼露天"> 顶楼露台</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:13px;"><input type="checkbox" value="烧烤"> 烧烤</label>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">外聘厨师姓名</label>
+      <input class="form-control" id="af-hired_chef_name" placeholder="如无外聘请留空">
+    </div>
+    <div class="form-group">
+      <label class="form-label">特殊饮食要求</label>
+      <textarea class="form-control" id="af-special_diet" rows="2" placeholder="如：不吃海鲜、清淡为主…"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">其他需求</label>
+      <textarea class="form-control" id="af-other_needs" rows="2" placeholder="其他备注…"></textarea>
+    </div>
+    <button class="btn btn-primary btn-block" onclick="submitApproval()" style="margin-top:4px;">提交申报</button>
+  </div>
+</div>
+
+<!-- ══════════════ 预约表单弹窗 ══════════════ -->
+<div class="modal-overlay" id="reservationModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title" id="reservationModalTitle">新建预约</span>
+      <span class="modal-close" onclick="closeModal('reservationModal')">×</span>
+    </div>
+    <div class="form-group">
+      <label class="form-label">申请人 *</label>
+      <input class="form-control" id="rv-requester" placeholder="请输入姓名">
+    </div>
+    <div class="row">
+      <div class="col form-group">
+        <label class="form-label">日期 *</label>
+        <input type="date" class="form-control" id="rv-visit_date">
+      </div>
+      <div class="col form-group">
+        <label class="form-label">到访时间</label>
+        <input type="time" class="form-control" id="rv-visit_time">
+      </div>
+    </div>
+    <div id="rv-reception-extra" style="display:none;">
+      <div class="form-group">
+        <label class="form-label">来宾人数</label>
+        <input type="number" class="form-control" id="rv-guest_count" placeholder="人数" min="1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">来宾单位/身份</label>
+        <input class="form-control" id="rv-guest_info" placeholder="来宾简介">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">用餐类型</label>
+      <select class="form-control" id="rv-meal_type">
+        <option value="">请选择</option>
+        <option value="午餐">午餐</option>
+        <option value="晚餐">晚餐</option>
+        <option value="仅茶叙">仅茶叙</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">特殊饮食要求</label>
+      <input class="form-control" id="rv-special_diet" placeholder="如：低盐、无辣…">
+    </div>
+    <div class="form-group">
+      <label class="form-label">其他备注</label>
+      <textarea class="form-control" id="rv-other_notes" rows="2" placeholder="其他说明…"></textarea>
+    </div>
+    <button class="btn btn-primary btn-block" onclick="submitReservation()" style="margin-top:4px;">提交预约</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════════════
+// 基础工具
+// ════════════════════════════════════════════════════════
+const API = '';  // 同域部署，前缀为空
+let currentPage = 'home';
+let currentReserveType = 'normal_lunch';
+let currentCheckCategory = null;
+let currentCheckSession = null;
+let currentCheckRecords = [];
+
+function showToast(msg, duration = 2000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+async function request(method, url, body) {
+  try {
+    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    if (body) opts.body = JSON.stringify(body);
+    const res = await fetch(API + url, opts);
+    const json = await res.json();
+    return json;
+  } catch (e) {
+    showToast('网络错误，请重试');
+    return { code: 1, message: e.message };
+  }
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function formatDate(str) {
+  if (!str) return '';
+  return str.replace('T', ' ').slice(0, 16);
+}
+
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// ════════════════════════════════════════════════════════
+// 导航
+// ════════════════════════════════════════════════════════
+function switchTab(page) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const navEl = document.getElementById('nav-' + page);
+  if (navEl) navEl.classList.add('active');
+  showPage(page);
+}
+
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  currentPage = page;
+
+  const titles = {
+    home: ['8楼私人接待中心', '管理系统'],
+    nutrition: ['营养知识', '疾病营养指南'],
+    'traffic-light': ['食物红黄绿灯', '食物选择参考'],
+    approval: ['申报审批', '接待信息确认单'],
+    reservation: ['预约管理', '就餐 / 接待预约'],
+    checklist: ['检查打勾', '接待前后检查'],
+    kitchen: ['厨房安全', '食品安全管理'],
+  };
+
+  const t = titles[page] || ['8楼私人接待中心', ''];
+  document.getElementById('headerTitle').textContent = t[0];
+  document.getElementById('headerSubtitle').textContent = t[1];
+
+  // 加载对应数据
+  if (page === 'approval') loadApprovals();
+  if (page === 'reservation') loadReservations();
+  if (page === 'checklist') loadCheckSessions();
+  if (page === 'kitchen') { loadKitchenHistory(); initKitchenDate(); }
+  if (page === 'nutrition') initNutrition();
+  if (page === 'traffic-light') initTrafficLight();
+}
+
+function goBack() {
+  switchTab('home');
+}
+
+// ════════════════════════════════════════════════════════
+// 申报审批
+// ════════════════════════════════════════════════════════
+async function loadApprovals(status = '') {
+  const list = document.getElementById('approvalList');
+  list.innerHTML = '<div class="empty-tip">加载中…</div>';
+  const url = '/api/approvals' + (status ? '?status=' + status : '');
+  const res = await request('GET', url);
+  if (res.code !== 0 || !res.data.length) {
+    list.innerHTML = '<div class="empty-tip">暂无申报记录</div>';
+    return;
+  }
+  list.innerHTML = res.data.map(item => `
+    <div class="approval-item">
+      <div class="approval-item-header">
+        <div>
+          <div style="font-size:14px;font-weight:600;">${item.submitter} · ${item.reception_date}</div>
+          <div class="approval-no">单号：${item.form_no || '-'}</div>
+        </div>
+        <span class="tag tag-${item.status}">${{pending:'待审批',approved:'已通过',rejected:'已驳回'}[item.status]}</span>
+      </div>
+      <div class="approval-meta">
+        📅 ${item.reception_date} ${item.visit_time || ''} — ${item.leave_time || ''}
+        ${item.guest_count ? `👥 ${item.guest_count}人` : ''}
+        ${item.meal_type ? `🍽️ ${item.meal_type}` : ''}
+        ${item.reception_type ? `<br>类型：${item.reception_type}` : ''}
+        ${item.guest_info ? `<br>来宾：${item.guest_info}` : ''}
+        ${item.special_diet ? `<br>饮食要求：${item.special_diet}` : ''}
+        ${item.reviewer ? `<br>审批人：${item.reviewer}` : ''}
+        ${item.review_comment ? `<br>审批意见：${item.review_comment}` : ''}
+      </div>
+      ${item.status === 'pending' ? `
+      <div class="approval-actions">
+        <button class="btn btn-primary btn-sm" onclick="reviewApproval(${item.id},'approved')">✓ 通过</button>
+        <button class="btn btn-outline btn-sm" onclick="reviewApproval(${item.id},'rejected')">✗ 驳回</button>
+      </div>` : ''}
+    </div>
+  `).join('');
+}
+
+function openApprovalForm() {
+  document.getElementById('af-reception_date').value = today();
+  openModal('approvalModal');
+}
+
+async function submitApproval() {
+  const areas = {};
+  document.querySelectorAll('#af-areas input:checked').forEach(cb => { areas[cb.value] = true; });
+  const body = {
+    submitter: document.getElementById('af-submitter').value,
+    reception_date: document.getElementById('af-reception_date').value,
+    reception_type: document.getElementById('af-reception_type').value,
+    visit_time: document.getElementById('af-visit_time').value,
+    leave_time: document.getElementById('af-leave_time').value,
+    guest_count: document.getElementById('af-guest_count').value || null,
+    meal_type: document.getElementById('af-meal_type').value,
+    guest_info: document.getElementById('af-guest_info').value,
+    areas,
+    hired_chef_name: document.getElementById('af-hired_chef_name').value,
+    special_diet: document.getElementById('af-special_diet').value,
+    other_needs: document.getElementById('af-other_needs').value,
+  };
+  if (!body.submitter || !body.reception_date) { showToast('请填写提交人和接待日期'); return; }
+  const res = await request('POST', '/api/approvals', body);
+  if (res.code === 0) {
+    showToast(res.message || '申报成功');
+    closeModal('approvalModal');
+    loadApprovals();
+  } else {
+    showToast('提交失败：' + res.message);
+  }
+}
+
+async function reviewApproval(id, status) {
+  const comment = status === 'rejected' ? (prompt('请输入驳回原因（可选）') || '') : '';
+  const res = await request('PATCH', `/api/approvals/${id}`, { status, review_comment: comment });
+  if (res.code === 0) {
+    showToast(status === 'approved' ? '已审批通过' : '已驳回');
+    loadApprovals();
+  } else {
+    showToast('操作失败：' + res.message);
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// 预约
+// ════════════════════════════════════════════════════════
+function switchReserveType(type) {
+  currentReserveType = type;
+  document.querySelectorAll('.reserve-type-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('rtBtn-' + type).classList.add('active');
+  loadReservations();
+}
+
+async function loadReservations() {
+  const list = document.getElementById('reservationList');
+  list.innerHTML = '<div class="empty-tip">加载中…</div>';
+  const res = await request('GET', `/api/reservations?type=${currentReserveType}`);
+  if (res.code !== 0 || !res.data.length) {
+    list.innerHTML = '<div class="empty-tip">暂无预约记录</div>';
+    return;
+  }
+  list.innerHTML = res.data.map(item => `
+    <div class="reservation-item">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+        <div style="font-size:14px;font-weight:600;">${item.requester} · ${item.visit_date}</div>
+        <span class="tag tag-${item.status}">${{pending:'待确认',approved:'已确认',rejected:'已取消'}[item.status]}</span>
+      </div>
+      <div class="approval-meta">
+        ${item.visit_time ? `⏰ ${item.visit_time}` : ''}
+        ${item.meal_type ? ` · 🍽️ ${item.meal_type}` : ''}
+        ${item.guest_count ? ` · 👥 ${item.guest_count}人` : ''}
+        ${item.special_diet ? `<br>饮食要求：${item.special_diet}` : ''}
+        ${item.other_notes ? `<br>备注：${item.other_notes}` : ''}
+      </div>
+      ${item.status === 'pending' ? `
+      <div class="approval-actions">
+        <button class="btn btn-primary btn-sm" onclick="updateReservation(${item.id},'approved')">✓ 确认</button>
+        <button class="btn btn-outline btn-sm" onclick="updateReservation(${item.id},'rejected')">✗ 取消</button>
+      </div>` : ''}
+    </div>
+  `).join('');
+}
+
+function openReservationForm() {
+  document.getElementById('rv-visit_date').value = today();
+  document.getElementById('reservationModalTitle').textContent =
+    currentReserveType === 'normal_lunch' ? '于总就餐预约' : '接待任务预约';
+  document.getElementById('rv-reception-extra').style.display =
+    currentReserveType === 'reception' ? 'block' : 'none';
+  openModal('reservationModal');
+}
+
+async function submitReservation() {
+  const body = {
+    type: currentReserveType,
+    requester: document.getElementById('rv-requester').value,
+    visit_date: document.getElementById('rv-visit_date').value,
+    visit_time: document.getElementById('rv-visit_time').value,
+    guest_count: document.getElementById('rv-guest_count').value || null,
+    guest_info: document.getElementById('rv-guest_info').value,
+    meal_type: document.getElementById('rv-meal_type').value,
+    special_diet: document.getElementById('rv-special_diet').value,
+    other_notes: document.getElementById('rv-other_notes').value,
+  };
+  if (!body.requester || !body.visit_date) { showToast('请填写申请人和日期'); return; }
+  const res = await request('POST', '/api/reservations', body);
+  if (res.code === 0) {
+    showToast('预约提交成功');
+    closeModal('reservationModal');
+    loadReservations();
+  } else {
+    showToast('提交失败：' + res.message);
+  }
+}
+
+async function updateReservation(id, status) {
+  const res = await request('PATCH', `/api/reservations/${id}`, { status });
+  if (res.code === 0) { showToast('已更新'); loadReservations(); }
+  else showToast('操作失败');
+}
+
+// ════════════════════════════════════════════════════════
+// 检查打勾
+// ════════════════════════════════════════════════════════
+const checkCategoryNames = {
+  pre_reception: '接待前检查',
+  post_reception: '接待后检查',
+  kitchen_safety: '厨房安全检查',
+};
+
+async function loadCheckSessions() {
+  const histDiv = document.getElementById('checkSessionHistory');
+  histDiv.innerHTML = '<div class="empty-tip">加载中…</div>';
+  const res = await request('GET', '/api/check-sessions');
+  if (res.code !== 0 || !res.data.length) {
+    histDiv.innerHTML = '<div class="empty-tip">暂无历史记录</div>';
+    return;
+  }
+  histDiv.innerHTML = res.data.map(s => `
+    <div class="card" style="cursor:pointer;" onclick="loadCheckDetail('${s.session_id}', '${s.category}')">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:14px;font-weight:600;">${checkCategoryNames[s.category] || s.category}</div>
+          <div style="font-size:12px;color:var(--c-text2);">${s.created_at ? s.created_at.slice(0,16) : ''} · ${s.checker || '未知'}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:14px;font-weight:600;color:var(--c-primary);">${s.done}/${s.total}</div>
+          <div class="progress-bar" style="width:60px;">
+            <div class="progress-fill" style="background:var(--c-primary);width:${Math.round(s.done/s.total*100)}%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function openCheckSession(category) {
+  currentCheckCategory = category;
+  const res = await request('POST', '/api/check-records/init', { category, checker: '' });
+  if (res.code !== 0) { showToast('初始化失败：' + res.message); return; }
+  currentCheckSession = res.data.session_id;
+  currentCheckRecords = res.data.records;
+  renderCheckDetail();
+}
+
+async function loadCheckDetail(sessionId, category) {
+  currentCheckSession = sessionId;
+  currentCheckCategory = category;
+  const res = await request('GET', `/api/check-records?session_id=${sessionId}`);
+  if (res.code !== 0) { showToast('加载失败'); return; }
+  currentCheckRecords = res.data;
+  renderCheckDetail();
+}
+
+function renderCheckDetail() {
+  document.getElementById('checklistHome').style.display = 'none';
+  document.getElementById('checklistDetail').style.display = 'block';
+  document.getElementById('checkDetailTitle').textContent = checkCategoryNames[currentCheckCategory] || '检查';
+  updateCheckProgress();
+
+  const list = document.getElementById('checkItemList');
+  list.innerHTML = currentCheckRecords.map((r, i) => `
+    <div class="check-item" id="ci-${r.id}">
+      <div class="check-box ${r.checked ? 'checked' : ''}" onclick="toggleCheck(${r.id}, ${i})"></div>
+      <div class="check-item-text ${r.checked ? 'done' : ''}" id="ct-${r.id}">${r.item}</div>
+    </div>
+  `).join('');
+}
+
+function updateCheckProgress() {
+  const total = currentCheckRecords.length;
+  const done = currentCheckRecords.filter(r => r.checked).length;
+  document.getElementById('checkDetailProgress').textContent = `已完成 ${done} / ${total} 项`;
+}
+
+async function toggleCheck(id, index) {
+  const record = currentCheckRecords[index];
+  const newChecked = !record.checked;
+  const checker = document.getElementById('checkerName').value || '未知';
+  const res = await request('PATCH', `/api/check-records/${id}`, { checked: newChecked, checker });
+  if (res.code === 0) {
+    currentCheckRecords[index].checked = newChecked;
+    const box = document.querySelector(`#ci-${id} .check-box`);
+    const text = document.getElementById('ct-' + id);
+    if (newChecked) { box.classList.add('checked'); text.classList.add('done'); }
+    else { box.classList.remove('checked'); text.classList.remove('done'); }
+    updateCheckProgress();
+  }
+}
+
+function submitCheckSession() {
+  const total = currentCheckRecords.length;
+  const done = currentCheckRecords.filter(r => r.checked).length;
+  if (done < total) {
+    if (!confirm(`还有 ${total - done} 项未完成，确认结束检查？`)) return;
+  }
+  showToast(`检查完成：${done}/${total} 项`);
+  closeCheckDetail();
+  loadCheckSessions();
+}
+
+function closeCheckDetail() {
+  document.getElementById('checklistHome').style.display = 'block';
+  document.getElementById('checklistDetail').style.display = 'none';
+  currentCheckSession = null;
+  currentCheckRecords = [];
+}
+
+// ════════════════════════════════════════════════════════
+// 厨房安全
+// ════════════════════════════════════════════════════════
+function initKitchenDate() {
+  document.getElementById('kitchenDate').value = today();
+}
+
+async function submitKitchenCheck() {
+  const body = {
+    check_date: document.getElementById('kitchenDate').value,
+    checker: document.getElementById('kitchenChecker').value,
+    fridge_temp_ok: document.getElementById('kc-fridge_temp_ok').checked,
+    freezer_temp_ok: document.getElementById('kc-freezer_temp_ok').checked,
+    fifo_followed: document.getElementById('kc-fifo_followed').checked,
+    raw_cooked_separated: document.getElementById('kc-raw_cooked_separated').checked,
+    overnight_soaked_discarded: document.getElementById('kc-overnight_soaked_discarded').checked,
+    expired_removed: document.getElementById('kc-expired_removed').checked,
+    cutting_board_cleaned: document.getElementById('kc-cutting_board_cleaned').checked,
+    stove_cleaned: document.getElementById('kc-stove_cleaned').checked,
+    floor_cleaned: document.getElementById('kc-floor_cleaned').checked,
+    trash_removed: document.getElementById('kc-trash_removed').checked,
+    fridge_contents: document.getElementById('kc-fridge_contents').value,
+    notes: document.getElementById('kc-notes').value,
+  };
+  if (!body.check_date || !body.checker) { showToast('请填写检查日期和检查人'); return; }
+  const res = await request('POST', '/api/kitchen-checks', body);
+  if (res.code === 0) {
+    showToast('厨房安全检查已记录');
+    loadKitchenHistory();
+    // 重置
+    document.querySelectorAll('#page-kitchen input[type=checkbox]').forEach(cb => cb.checked = false);
+    document.getElementById('kc-fridge_contents').value = '';
+    document.getElementById('kc-notes').value = '';
+    document.getElementById('kitchenChecker').value = '';
+  } else {
+    showToast('提交失败：' + res.message);
+  }
+}
+
+async function loadKitchenHistory() {
+  const div = document.getElementById('kitchenHistory');
+  div.innerHTML = '<div class="empty-tip">加载中…</div>';
+  const res = await request('GET', '/api/kitchen-checks');
+  if (res.code !== 0 || !res.data.length) {
+    div.innerHTML = '<div class="empty-tip">暂无历史记录</div>';
+    return;
+  }
+  const checks = ['fridge_temp_ok','freezer_temp_ok','fifo_followed','raw_cooked_separated',
+    'overnight_soaked_discarded','expired_removed','cutting_board_cleaned','stove_cleaned',
+    'floor_cleaned','trash_removed'];
+  div.innerHTML = res.data.slice(0, 10).map(item => {
+    const done = checks.filter(k => item[k]).length;
+    return `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:14px;font-weight:600;">📅 ${item.check_date}</div>
+          <div style="font-size:12px;color:var(--c-text2);">检查人：${item.checker}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:14px;font-weight:600;color:${done===checks.length?'var(--c-green)':'var(--c-yellow)'};">${done}/${checks.length}</div>
+        </div>
+      </div>
+      ${item.fridge_contents ? `<div style="font-size:12px;color:var(--c-text2);margin-top:6px;">🗄️ ${item.fridge_contents}</div>` : ''}
+      ${item.notes ? `<div style="font-size:12px;color:var(--c-text2);margin-top:2px;">📝 ${item.notes}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════════
+// 营养知识（本地静态数据）
+// ════════════════════════════════════════════════════════
+const nutritionData = {
+  '高血压': {
+    icon: '🩺',
+    intro: '高血压患者需严格控制钠摄入，增加钾、镁、钙的摄取，保持健康体重。',
+    sections: [
+      { title: '✅ 推荐饮食', items: [
+        { name: '富钾食物', text: '香蕉、土豆、菠菜、豆类有助降压，建议每日摄入充足' },
+        { name: '低盐饮食', text: '每日食盐≤5g，避免腌制品、酱油过量' },
+        { name: 'DASH饮食', text: '全谷物、蔬菜、水果、低脂乳制品为主的饮食模式' },
+        { name: '优质蛋白', text: '鱼类、豆腐、鸡胸肉等优质蛋白，减少红肉' },
+      ]},
+      { title: '⚠️ 注意事项', items: [
+        { name: '限制饮酒', text: '酒精会升高血压，建议严格限制或戒酒' },
+        { name: '避免高盐', text: '火腿、腊肉、咸菜、酱菜含钠量极高，需禁用' },
+        { name: '控制咖啡因', text: '过量咖啡因可能导致血压短暂升高' },
+      ]},
+    ]
+  },
+  '高血脂': {
+    icon: '🔬',
+    intro: '高血脂以控制饱和脂肪、反式脂肪摄入为核心，增加膳食纤维，适量运动。',
+    sections: [
+      { title: '✅ 推荐饮食', items: [
+        { name: '燕麦/全谷物', text: 'β-葡聚糖可降低LDL胆固醇，每日1碗燕麦粥' },
+        { name: '深海鱼', text: 'Omega-3脂肪酸有助降低甘油三酯，每周2-3次' },
+        { name: '豆类食品', text: '豆腐、豆浆中植物固醇有助降低血脂' },
+        { name: '坚果（少量）', text: '核桃、杏仁含健康不饱和脂肪酸，每天一小把' },
+      ]},
+      { title: '⚠️ 注意事项', items: [
+        { name: '避免反式脂肪', text: '饼干、奶油蛋糕、炸食中含反式脂肪，严格限制' },
+        { name: '减少动物内脏', text: '猪肝、猪脑胆固醇含量极高，建议不吃' },
+        { name: '控制蛋黄', text: '每周蛋黄不超过3-4个，蛋白不限' },
+      ]},
+    ]
+  },
+  '糖尿病': {
+    icon: '🩸',
+    intro: '糖尿病饮食以控制血糖为核心，低GI食物为主，定时定量，减少精制糖。',
+    sections: [
+      { title: '✅ 推荐饮食', items: [
+        { name: '低GI主食', text: '燕麦、荞麦、糙米替代白米，升糖指数低，血糖平稳' },
+        { name: '非淀粉蔬菜', text: '西兰花、叶类蔬菜、黄瓜可自由食用' },
+        { name: '优质蛋白', text: '鸡蛋、鱼类、豆腐不升血糖，可作为主要蛋白来源' },
+        { name: '苦瓜', text: '含苦瓜素，有辅助调节血糖作用' },
+      ]},
+      { title: '⚠️ 注意事项', items: [
+        { name: '严禁精制糖', text: '白糖、蜂蜜、含糖饮料、糕点严格禁止' },
+        { name: '控制水果量', text: '水果含果糖，每日不超过200g，选低GI品种' },
+        { name: '避免油炸食品', text: '油炸食品升糖快，且热量高，不利体重控制' },
+      ]},
+    ]
+  },
+  '痛风': {
+    icon: '🦴',
+    intro: '痛风患者需严格限制高嘌呤食物，大量饮水，碱化尿液，减少尿酸生成。',
+    sections: [
+      { title: '✅ 推荐饮食', items: [
+        { name: '大量饮水', text: '每日饮水2000ml以上，促进尿酸排泄' },
+        { name: '碱性食物', text: '蔬菜、水果（柠檬、樱桃）有助碱化尿液' },
+        { name: '低脂乳制品', text: '牛奶、酸奶有助降低尿酸' },
+        { name: '鸡蛋', text: '嘌呤含量极低，痛风患者理想蛋白来源' },
+      ]},
+      { title: '❌ 禁止饮食', items: [
+        { name: '禁啤酒/酒精', text: '酒精阻碍尿酸排泄，是痛风发作最主要诱因' },
+        { name: '禁动物内脏', text: '猪肝、猪腰嘌呤含量极高，严格禁止' },
+        { name: '限制海鲜', text: '沙丁鱼、带鱼、贝类嘌呤高，急性期禁食' },
+        { name: '限制肉汤', text: '浓肉汤、火锅汤底嘌呤溶出量高' },
+      ]},
+    ]
+  },
+  '心血管健康': {
+    icon: '❤️',
+    intro: '心血管健康以地中海饮食为参考，控制饱和脂肪，增加抗氧化营养素，保持体重。',
+    sections: [
+      { title: '✅ 推荐饮食', items: [
+        { name: '橄榄油', text: '单不饱和脂肪酸，保护心血管，用于凉拌或低温烹饪' },
+        { name: '深色浆果', text: '蓝莓、草莓含花青素，抗氧化护心' },
+        { name: '深海鱼', text: 'Omega-3降低心血管风险，每周至少2次' },
+        { name: '坚果', text: '核桃、杏仁含维生素E和不饱和脂肪酸' },
+        { name: '绿茶', text: '儿茶素抗氧化，适量饮用有益心血管' },
+      ]},
+      { title: '⚠️ 注意事项', items: [
+        { name: '限红肉', text: '红肉饱和脂肪高，每周不超过500g' },
+        { name: '避免反式脂肪', text: '氢化植物油、人造奶油需完全避免' },
+        { name: '控盐控糖', text: '高钠高糖饮食均增加心血管风险' },
+      ]},
+    ]
+  },
+  '肾脏保护': {
+    icon: '🫘',
+    intro: '肾病患者需控制蛋白质、磷、钾、钠摄入量，根据肾功能分期调整饮食方案。',
+    sections: [
+      { title: '✅ 推荐饮食', items: [
+        { name: '优质低量蛋白', text: '选鸡蛋、鱼肉等优质蛋白，但总量需控制' },
+        { name: '低磷食物', text: '米饭、面条等主食磷含量较低，可正常食用' },
+        { name: '充足热量', text: '保证热量摄入防止肌肉消耗，以脂肪和碳水补充' },
+      ]},
+      { title: '⚠️ 注意事项', items: [
+        { name: '限制高磷食物', text: '乳制品、坚果、豆类含磷高，需限量' },
+        { name: '控钾（晚期）', text: '肾功能差时需限制香蕉、土豆等高钾食物' },
+        { name: '低盐饮食', text: '减轻肾脏负担，每日食盐≤3g' },
+      ]},
+    ]
+  },
+  '一般健康': {
+    icon: '🌱',
+    intro: '均衡饮食是健康基础：多样化食物、适量蛋白质、充足蔬菜水果、控制精制糖和加工食品。',
+    sections: [
+      { title: '🍽️ 膳食宝塔', items: [
+        { name: '谷薯类（250-400g）', text: '全谷物占1/3以上，红薯、燕麦为优先选择' },
+        { name: '蔬菜（≥300g）', text: '深色蔬菜占一半，多样化摄取' },
+        { name: '水果（200-350g）', text: '每天1-2个拳头大小的水果' },
+        { name: '鱼禽蛋（120-200g）', text: '优先鱼虾、禽肉，少红肉，每天1个鸡蛋' },
+        { name: '奶豆坚果', text: '每天300ml牛奶/酸奶，25g大豆，10g坚果' },
+      ]},
+      { title: '💧 饮水建议', items: [
+        { name: '每日饮水量', text: '成人每日1500-1700ml，运动/高温增加' },
+        { name: '优先白开水', text: '少喝含糖饮料和果汁，控制咖啡因摄入' },
+      ]},
+    ]
+  },
+};
+
+function initNutrition() {
+  const tabs = document.getElementById('diseaseTabs');
+  const content = document.getElementById('nutritionContent');
+  const diseases = Object.keys(nutritionData);
+
+  if (!tabs.children.length) {
+    tabs.innerHTML = diseases.map((d, i) => `
+      <div class="disease-tab ${i === 0 ? 'active' : ''}" onclick="switchDisease('${d}', this)">${nutritionData[d].icon} ${d}</div>
+    `).join('');
+    renderNutrition(diseases[0]);
+  }
+}
+
+function switchDisease(disease, el) {
+  document.querySelectorAll('.disease-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderNutrition(disease);
+}
+
+function renderNutrition(disease) {
+  const data = nutritionData[disease];
+  const content = document.getElementById('nutritionContent');
+  content.innerHTML = `
+    <div class="card" style="background:var(--c-primary-bg);border-left:4px solid var(--c-primary);">
+      <div style="font-size:28px;margin-bottom:6px;">${data.icon}</div>
+      <div style="font-size:14px;color:var(--c-text2);line-height:1.6;">${data.intro}</div>
+    </div>
+    ${data.sections.map(sec => `
+      <div class="nutrition-card">
+        <div class="nutrition-card-header" onclick="toggleNutritionCard(this)">
+          <span class="nutrition-card-title">${sec.title}</span>
+          <span style="color:var(--c-text2);font-size:18px;">›</span>
+        </div>
+        <div class="nutrition-card-body open">
+          ${sec.items.map(item => `
+            <div class="nutrition-item">
+              <h4>${item.name}</h4>
+              <p>${item.text}</p>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('')}
+  `;
+}
+
+function toggleNutritionCard(header) {
+  const body = header.nextElementSibling;
+  body.classList.toggle('open');
+}
+
+// ════════════════════════════════════════════════════════
+// 食物红黄绿灯（本地数据）
+// ════════════════════════════════════════════════════════
+const foodData = {
+  red: [
+    { cat: '酒类', emoji: '🍺', name: '啤酒/白酒', reason: '升尿酸，损伤血管' },
+    { cat: '内脏', emoji: '🫀', name: '猪肝/猪腰', reason: '高嘌呤、高胆固醇' },
+    { cat: '内脏', emoji: '🧠', name: '猪脑', reason: '胆固醇极高' },
+    { cat: '加工食品', emoji: '🌭', name: '香肠/火腿', reason: '高钠、亚硝酸盐' },
+    { cat: '加工食品', emoji: '🍟', name: '油炸食品', reason: '反式脂肪，高热量' },
+    { cat: '加工食品', emoji: '🧁', name: '奶油蛋糕', reason: '反式脂肪，高糖' },
+    { cat: '腌制品', emoji: '🥒', name: '咸菜/泡菜', reason: '高盐，亚硝酸盐' },
+    { cat: '腌制品', emoji: '🐟', name: '咸鱼', reason: '高盐，可能致癌' },
+    { cat: '甜食', emoji: '🥤', name: '含糖饮料', reason: '升血糖，增肥' },
+    { cat: '甜食', emoji: '🍬', name: '糖果/甜点', reason: '精制糖，空热量' },
+    { cat: '海鲜', emoji: '🦪', name: '牡蛎/贝类', reason: '高嘌呤（痛风禁忌）' },
+    { cat: '海鲜', emoji: '🐟', name: '沙丁鱼', reason: '嘌呤极高' },
+    { cat: '其他', emoji: '🧂', name: '腊肉', reason: '极高盐分，致癌风险' },
+    { cat: '其他', emoji: '🍜', name: '方便面', reason: '高钠，反式脂肪' },
+  ],
+  yellow: [
+    { cat: '肉类', emoji: '🥩', name: '红肉（牛羊）', reason: '适量，每周<500g' },
+    { cat: '肉类', emoji: '🐷', name: '猪肉', reason: '饱和脂肪较高，限量' },
+    { cat: '蛋类', emoji: '🥚', name: '蛋黄', reason: '每周≤3-4个' },
+    { cat: '主食', emoji: '🍚', name: '白米饭', reason: 'GI较高，糖尿病慎用' },
+    { cat: '主食', emoji: '🍞', name: '白面包', reason: '精制碳水，限量' },
+    { cat: '乳制品', emoji: '🧀', name: '全脂奶酪', reason: '饱和脂肪较高' },
+    { cat: '水果', emoji: '🍇', name: '葡萄/荔枝', reason: '糖分较高，限量' },
+    { cat: '水果', emoji: '🍌', name: '香蕉', reason: '钾高（肾病限），糖尿病限量' },
+    { cat: '坚果', emoji: '🥜', name: '花生/腰果', reason: '热量高，一天一小把' },
+    { cat: '海鲜', emoji: '🦐', name: '虾/螃蟹', reason: '胆固醇较高，适量' },
+    { cat: '调味品', emoji: '🫙', name: '酱油', reason: '高盐，严格控量' },
+    { cat: '饮品', emoji: '☕', name: '咖啡', reason: '适量（≤1-2杯/日）' },
+    { cat: '饮品', emoji: '🍵', name: '浓茶', reason: '影响铁吸收，空腹不宜' },
+    { cat: '其他', emoji: '🍯', name: '蜂蜜', reason: '天然糖，糖尿病慎用' },
+  ],
+  green: [
+    { cat: '蔬菜', emoji: '🥦', name: '西兰花', reason: '抗氧化，富含维C、K' },
+    { cat: '蔬菜', emoji: '🥬', name: '深绿叶菜', reason: '叶酸、铁、钙丰富' },
+    { cat: '蔬菜', emoji: '🥕', name: '胡萝卜', reason: 'β-胡萝卜素护眼护心' },
+    { cat: '蔬菜', emoji: '🧅', name: '洋葱', reason: '槲皮素，抗炎降糖' },
+    { cat: '蔬菜', emoji: '🍄', name: '菌菇类', reason: '低嘌呤，免疫调节' },
+    { cat: '蔬菜', emoji: '🫑', name: '彩椒', reason: '维C极高，低糖低脂' },
+    { cat: '主食', emoji: '🌾', name: '燕麦', reason: 'β-葡聚糖降胆固醇' },
+    { cat: '主食', emoji: '🍠', name: '红薯', reason: '高纤维，低GI，护肠道' },
+    { cat: '主食', emoji: '🌰', name: '糙米', reason: '全谷物，B族维生素' },
+    { cat: '蛋白', emoji: '🐟', name: '深海鱼', reason: 'Omega-3护心护脑' },
+    { cat: '蛋白', emoji: '🍗', name: '鸡胸肉', reason: '低脂高蛋白' },
+    { cat: '蛋白', emoji: '🫘', name: '豆腐/豆浆', reason: '植物蛋白，护心降脂' },
+    { cat: '蛋白', emoji: '🥚', name: '鸡蛋白', reason: '优质蛋白，嘌呤低' },
+    { cat: '水果', emoji: '🫐', name: '蓝莓', reason: '花青素，抗氧化抗炎' },
+    { cat: '水果', emoji: '🍓', name: '草莓', reason: '低GI，高维C' },
+    { cat: '水果', emoji: '🍎', name: '苹果', reason: '果胶护肠道，低GI' },
+    { cat: '饮品', emoji: '🍵', name: '绿茶（淡）', reason: '儿茶素抗氧化' },
+    { cat: '饮品', emoji: '💧', name: '白开水', reason: '最健康的饮品' },
+    { cat: '油脂', emoji: '🫒', name: '橄榄油', reason: '单不饱和脂肪酸护心' },
+    { cat: '坚果', emoji: '🌰', name: '核桃', reason: 'Omega-3，护心健脑' },
+  ]
+};
+
+let currentLight = 'red';
+let currentCat = '全部';
+
+function initTrafficLight() {
+  renderFoodCats('red');
+  renderFoodGrid('red', '全部');
+}
+
+function switchLight(light, el) {
+  currentLight = light;
+  currentCat = '全部';
+  document.querySelectorAll('.light-tab').forEach(t => { t.classList.remove('active'); });
+  el.classList.add('active');
+  renderFoodCats(light);
+  renderFoodGrid(light, '全部');
+}
+
+function renderFoodCats(light) {
+  const cats = ['全部', ...new Set(foodData[light].map(f => f.cat))];
+  const filter = document.getElementById('catFilter');
+  filter.innerHTML = cats.map(c => `
+    <div class="cat-btn ${c === '全部' ? 'active' : ''}" onclick="filterCat('${c}', this)">${c}</div>
+  `).join('');
+}
+
+function filterCat(cat, el) {
+  currentCat = cat;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderFoodGrid(currentLight, cat);
+}
+
+function renderFoodGrid(light, cat) {
+  const items = cat === '全部' ? foodData[light] : foodData[light].filter(f => f.cat === cat);
+  const grid = document.getElementById('foodGrid');
+  grid.innerHTML = items.map(f => `
+    <div class="food-item ${light}-food">
+      <div class="food-emoji">${f.emoji}</div>
+      <div class="food-name">${f.name}</div>
+      <div class="food-reason">${f.reason}</div>
+    </div>
+  `).join('');
+}
+
+// ════════════════════════════════════════════════════════
+// 初始化
+// ════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  initTrafficLight();
+  initNutrition();
+  initKitchenDate();
+});
+</script>
+</body>
+</html>
